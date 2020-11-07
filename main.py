@@ -101,41 +101,100 @@ def create_transaction():
     response = requests.post(URL + '/wallet/' + frontend["address"], json=payload).json()
     print(response)
 
+    inputs = []
+    outputs = []
+
     sum_amount = 0
-
-    t = pybgl.Transaction()
-    t["testnet"] = False
-    t["segwit"] = True
-
-    count = 0
     for i in response["result"]:
         sum_amount += i["amount"]
-        t.add_input(i["txid"], i["vout"], 0xffffffff, b"", None, int(10 ** 8 * i["amount"]), i["scriptPubKey"],
-                    i["address"])
-        t.sign_input(count, frontend["private_key"], i["scriptPubKey"], None, pybgl.SIGHASH_ALL, i["address"],
-                     int(10 ** 8 * i["amount"]))
-        count += 1
+        i_append = {"txid": i["txid"],
+                    "vout": i["vout"]}
+        inputs.append(i_append)
         if sum_amount >= frontend["amount"]:
             break
 
-    t.add_output(int(10 ** 8 * (sum_amount - frontend["amount"])) - 1000, frontend["address"])
-    t.add_output(int(10 ** 8 * frontend["amount"]), frontend["to_address"])
+    back_output = {frontend["address"]: sum_amount - frontend["amount"]-0.014}
+    to_output = {frontend["to_address"]: frontend["amount"]}
 
-    # enc = t.encode()
-    print(t["txId"])
-    print(t["rawTx"])
-    print(t["hash"])
+    outputs.append(back_output)
+    outputs.append(to_output)
 
     payload = {
-        "method": "sendrawtransaction",
-        "params": [t["rawTx"]],
+        "method": "createrawtransaction",
+        "params": [inputs, outputs],
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(URL, json=payload)
-    print("respones text: ", response.text)
+    response = requests.post(URL, json=payload).json()
+    print(response)
 
-    return jsonify(t)
+    hexstring = response["result"]
+    print("hexstring == ", hexstring)
+    private_key = [frontend["private_key"]]
+
+    payload = {
+        "method": "signrawtransactionwithkey",
+        "params": [hexstring, private_key],
+        "jsonrpc": "2.0",
+        "id": "backend",
+    }
+    response = requests.post(URL, json=payload).json()
+    print(response)
+
+    hexstring = response["result"]["hex"]
+
+    payload = {
+        "method": "sendrawtransaction",
+        "params": [hexstring],
+        "jsonrpc": "2.0",
+        "id": "backend",
+    }
+    response = requests.post(URL, json=payload).json()
+    print(response)
+
+    # t = pybgl.Transaction()
+    # t["testnet"] = False
+    # t["segwit"] = True
+    #
+    # count = 0
+    # for i in response["result"]:
+    #     sum_amount += i["amount"]
+    #     t.add_input(i["txid"], i["vout"], 0xffffffff, b"", None, int(10 ** 8 * i["amount"]), i["scriptPubKey"],
+    #                 i["address"])
+    #     t.sign_input(count, frontend["private_key"], i["scriptPubKey"], None, pybgl.SIGHASH_ALL, i["address"],
+    #                  int(10 ** 8 * i["amount"]))
+    #     count += 1
+    #     if sum_amount >= frontend["amount"]:
+    #         break
+    #
+    # t.add_output(int(10 ** 8 * (sum_amount - frontend["amount"])) - 1000, frontend["address"])
+    # t.add_output(int(10 ** 8 * frontend["amount"]), frontend["to_address"])
+    #
+    # payload = {
+    #     "method": "signrawtransactionwithkey",
+    #     "params": [t["rawTx"], frontend["private_key"]],
+    #     "jsonrpc": "2.0",
+    #     "id": "backend",
+    # }
+    #
+    # response = requests.post(URL, json=payload).json()
+    # print(response)
+    #
+    # # enc = t.encode()
+    # print(t["txId"])
+    # print(t["rawTx"])
+    # print(t["hash"])
+    #
+    # payload = {
+    #     "method": "sendrawtransaction",
+    #     "params": [t["rawTx"]],
+    #     "jsonrpc": "2.0",
+    #     "id": "backend",
+    # }
+    # response = requests.post(URL, json=payload)
+    # print("respones text: ", response.text)
+
+    return jsonify(response)
 
 
 if __name__ == "__main__":
