@@ -1,3 +1,5 @@
+import os
+
 import pybgl
 import requests
 
@@ -81,6 +83,44 @@ def get_history():
         i.pop("vout")
 
     return jsonify(response["result"])
+
+
+@app.route("/transaction", methods=['POST'])
+def create_transaction():
+    # Create transaction
+    frontend = request.json
+
+    # Get list of unspent
+    addresses = [frontend["address"]]
+    payload = {
+        "method": "listunspent",
+        "params": [0, 999999999, addresses],
+        "jsonrpc": "2.0",
+        "id": "backend",
+    }
+    response = requests.post(URL + '/wallet/' + frontend["address"], json=payload).json()
+    print(response)
+
+    sum_amount = 0
+
+    t = pybgl.Transaction()
+    count = 0
+    for i in response["result"]:
+        sum_amount += i["amount"]
+        t.add_input(i["txid"], i["vout"])
+        t.sign_input(count, frontend["private_key"], i["scriptPubKey"], None, pybgl.SIGHASH_ALL, i["address"],
+                     i["amount"])
+        count += 1
+        if sum_amount >= frontend["amount"]:
+            break
+
+    t.add_output(sum_amount - frontend["amount"], frontend["address"])
+    t.add_output(sum_amount, frontend["to_address"])
+
+    t.values()
+    print(t["txid"])
+
+    return jsonify(t)
 
 
 if __name__ == "__main__":
