@@ -68,9 +68,9 @@ def get_history():
         "id": "backend",
     }
     response = requests.post(URL + '/wallet/' + address, json=payload).json()
-    # print("hello")
-    # print(response)
+
     for i in response["result"]:
+        i["amount"] = str(i["amount"])
         i.pop("bip125-replaceable")
         i.pop("blockhash")
         i.pop("blockheight")
