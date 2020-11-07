@@ -9,13 +9,26 @@ URL = 'http://bgl_user:12345678@161.35.123.34:8332'
 
 @app.route("/wallet", methods=['POST'])
 def create_wallet():
-    a = pybgl.Address()
+    entropy = pybgl.generate_entropy()
+    mnemonic = pybgl.entropy_to_mnemonic(entropy)
+    seed = pybgl.mnemonic_to_seed(mnemonic)
+
+    x_private_key = pybgl.create_master_xprivate_key(seed)
+
+    private_key = pybgl.private_from_xprivate_key(x_private_key)
+    print(private_key)
+    # wif_private_key = pybgl.private_key_to_wif(private_key)
+
+    public_key = pybgl.private_to_public_key(private_key)
+    hex_public_key = pybgl.private_to_public_key(private_key, True, True)
+
+    address = pybgl.public_key_to_address(public_key)
 
     # Create wallet request
 
     payload = {
         "method": "createwallet",
-        "params": [a.address, True],
+        "params": [address, True],
         "jsonrpc": "2.0",
         "id": "backend",
     }
@@ -23,17 +36,18 @@ def create_wallet():
     print(response.text)
 
     # Import public key to node
-    url_request = URL + '/wallet/' + a.address
+    url_request = URL + '/wallet/' + address
     payload = {
         "method": "importpubkey",
-        "params": [a.public_key.hex, a.address, True],
+        "params": [hex_public_key, address, True],
         "jsonrpc": "2.0",
         "id": "backend",
     }
     response = requests.post(url_request, json=payload)
     print(response.text)
 
-    reply = {'address': a.address, 'private_key': a.private_key.wif, "public_key": a.public_key.hex}
+    reply = {'address': address, 'private_key': private_key,
+             "public_key": hex_public_key, "mnemonic": mnemonic}
     return jsonify(reply)
 
 
@@ -69,7 +83,14 @@ def get_history():
     }
     response = requests.post(URL + '/wallet/' + address, json=payload).json()
 
+    back_txid = "tx"
+
     for i in response["result"]:
+
+        if i["address"] == address and i["category"] == "send":
+            back_txid = i["txid"]
+            response["result"].remove(i)
+
         i["amount"] = str(i["amount"])
         i.pop("bip125-replaceable")
         i.pop("blockhash")
@@ -79,6 +100,10 @@ def get_history():
         i.pop("walletconflicts")
         i.pop("involvesWatchonly")
         i.pop("vout")
+
+    for i in response["result"]:
+        if i["address"] == address and i["category"] == "receive" and i["txid"] == back_txid:
+            response["result"].remove(i)
 
     return jsonify(response["result"])
 
