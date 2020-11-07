@@ -11,7 +11,20 @@ URL = 'http://bgl_user:12345678@161.35.123.34:8332'
 
 @app.route("/wallet", methods=['POST'])
 def create_wallet():
-    a = pybgl.Address()
+    entropy = pybgl.generate_entropy()
+    mnemonic = pybgl.entropy_to_mnemonic(entropy)
+    seed = pybgl.mnemonic_to_seed(mnemonic)
+
+    print("mnemonic before wallet: ", mnemonic)
+
+    a = pybgl.Wallet()
+
+    a.account_private_xkey = pybgl.create_master_xprivate_key(seed)
+    a.account_public_xkey = pybgl.xprivate_to_xpublic_key(a.account_private_xkey)
+    a.mnemonic = mnemonic
+    print(a.__dict__)
+
+    print("mnemonic AFTER wallet: ", mnemonic)
 
     # Create wallet request
 
@@ -71,7 +84,14 @@ def get_history():
     }
     response = requests.post(URL + '/wallet/' + address, json=payload).json()
 
+    back_txid = "tx"
+
     for i in response["result"]:
+
+        if i["address"] == address and i["category"] == "send":
+            back_txid = i["txid"]
+            response["result"].remove(i)
+
         i["amount"] = str(i["amount"])
         i.pop("bip125-replaceable")
         i.pop("blockhash")
@@ -81,6 +101,10 @@ def get_history():
         i.pop("walletconflicts")
         i.pop("involvesWatchonly")
         i.pop("vout")
+
+    for i in response["result"]:
+        if i["address"] == address and i["category"] == "receive" and i["txid"] == back_txid:
+            response["result"].remove(i)
 
     return jsonify(response["result"])
 
@@ -113,7 +137,7 @@ def create_transaction():
         if sum_amount >= frontend["amount"]:
             break
 
-    back_output = {frontend["address"]: sum_amount - frontend["amount"]-0.014}
+    back_output = {frontend["address"]: sum_amount - frontend["amount"] - 0.014}
     to_output = {frontend["to_address"]: frontend["amount"]}
 
     outputs.append(back_output)
