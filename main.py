@@ -13,22 +13,22 @@ def create_wallet():
     mnemonic = pybgl.entropy_to_mnemonic(entropy)
     seed = pybgl.mnemonic_to_seed(mnemonic)
 
-    print("mnemonic before wallet: ", mnemonic)
+    x_private_key = pybgl.create_master_xprivate_key(seed)
 
-    a = pybgl.Wallet()
+    private_key = pybgl.private_from_xprivate_key(x_private_key)
+    print(private_key)
+    # wif_private_key = pybgl.private_key_to_wif(private_key)
 
-    a.account_private_xkey = pybgl.create_master_xprivate_key(seed)
-    a.account_public_xkey = pybgl.xprivate_to_xpublic_key(a.account_private_xkey)
-    a.mnemonic = mnemonic
-    print(a.__dict__)
+    public_key = pybgl.private_to_public_key(private_key)
+    hex_public_key = pybgl.private_to_public_key(private_key, True, True)
 
-    print("mnemonic AFTER wallet: ", mnemonic)
+    address = pybgl.public_key_to_address(public_key)
 
     # Create wallet request
 
     payload = {
         "method": "createwallet",
-        "params": [a.address, True],
+        "params": [address, True],
         "jsonrpc": "2.0",
         "id": "backend",
     }
@@ -36,17 +36,18 @@ def create_wallet():
     print(response.text)
 
     # Import public key to node
-    url_request = URL + '/wallet/' + a.address
+    url_request = URL + '/wallet/' + address
     payload = {
         "method": "importpubkey",
-        "params": [a.public_key.hex, a.address, True],
+        "params": [hex_public_key, address, True],
         "jsonrpc": "2.0",
         "id": "backend",
     }
     response = requests.post(url_request, json=payload)
     print(response.text)
 
-    reply = {'address': a.address, 'private_key': a.private_key.wif, "public_key": a.public_key.hex}
+    reply = {'address': address, 'private_key': private_key,
+             "public_key": hex_public_key, "mnemonic": mnemonic}
     return jsonify(reply)
 
 
