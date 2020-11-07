@@ -87,70 +87,81 @@ def get_history():
 def create_transaction():
     # Create transaction
     frontend = request.json
+    print(frontend)
 
-    # Get list of unspent
-    addresses = [frontend["address"]]
-    payload = {
-        "method": "listunspent",
-        "params": [0, 999999999, addresses],
-        "jsonrpc": "2.0",
-        "id": "backend",
-    }
-    response = requests.post(URL + '/wallet/' + frontend["address"], json=payload).json()
-    print(response)
+    try:
+        # Get list of unspent
+        addresses = [frontend["address"]]
+        payload = {
+            "method": "listunspent",
+            "params": [0, 999999999, addresses],
+            "jsonrpc": "2.0",
+            "id": "backend",
+        }
+        response = requests.post(URL + '/wallet/' + frontend["address"], json=payload).json()
+        print(response)
 
-    inputs = []
-    outputs = []
+        inputs = []
+        outputs = []
 
-    sum_amount = 0
-    for i in response["result"]:
-        sum_amount += i["amount"]
-        i_append = {"txid": i["txid"],
-                    "vout": i["vout"]}
-        inputs.append(i_append)
-        if sum_amount >= frontend["amount"]:
-            break
+        sum_amount = 0
+        for i in response["result"]:
+            sum_amount += i["amount"]
+            i_append = {"txid": i["txid"],
+                        "vout": i["vout"]}
+            inputs.append(i_append)
+            if sum_amount >= frontend["amount"]:
+                break
 
-    back_output = {frontend["address"]: sum_amount - frontend["amount"] - 0.014}
-    to_output = {frontend["to_address"]: frontend["amount"]}
+        # print("sum_amount: ", sum_amount)
+        # print("sum_amount - frontend[amount]: ", sum_amount - frontend["amount"])
+        # print("sum_amount - frontend[amount]: ", sum_amount - frontend["amount"])
+        # print("sum_amount - frontend[amount] - 0.014: ", sum_amount - frontend["amount"] - 0.014)
+        # print("-----------")
+        back_output = {frontend["address"]: float(format(sum_amount - frontend["amount"] - 0.014, '.8f'))}
+        to_output = {frontend["to_address"]: frontend["amount"]}
 
-    outputs.append(back_output)
-    outputs.append(to_output)
+        outputs.append(back_output)
+        outputs.append(to_output)
 
-    payload = {
-        "method": "createrawtransaction",
-        "params": [inputs, outputs],
-        "jsonrpc": "2.0",
-        "id": "backend",
-    }
-    response = requests.post(URL, json=payload).json()
-    print(response)
+        payload = {
+            "method": "createrawtransaction",
+            "params": [inputs, outputs],
+            "jsonrpc": "2.0",
+            "id": "backend",
+        }
+        print(payload)
+        response = requests.post(URL, json=payload).json()
+        print(response)
 
-    hexstring = response["result"]
-    print("hexstring == ", hexstring)
-    private_key = [frontend["private_key"]]
+        hexstring = response["result"]
+        print("hexstring == ", hexstring)
+        private_key = [frontend["private_key"]]
 
-    payload = {
-        "method": "signrawtransactionwithkey",
-        "params": [hexstring, private_key],
-        "jsonrpc": "2.0",
-        "id": "backend",
-    }
-    response = requests.post(URL, json=payload).json()
-    print(response)
+        payload = {
+            "method": "signrawtransactionwithkey",
+            "params": [hexstring, private_key],
+            "jsonrpc": "2.0",
+            "id": "backend",
+        }
+        response = requests.post(URL, json=payload).json()
+        print(response)
 
-    hexstring = response["result"]["hex"]
+        hexstring = response["result"]["hex"]
 
-    payload = {
-        "method": "sendrawtransaction",
-        "params": [hexstring],
-        "jsonrpc": "2.0",
-        "id": "backend",
-    }
-    response = requests.post(URL, json=payload).json()
-    print(response)
+        payload = {
+            "method": "sendrawtransaction",
+            "params": [hexstring],
+            "jsonrpc": "2.0",
+            "id": "backend",
+        }
+        response = requests.post(URL, json=payload).json()
+        print(response)
+    except:
+        return jsonify({"message": "error"}), 400
 
-    return jsonify(response)
+    response["message"] = "ok"
+    return jsonify(response), 201
 
 
 if __name__ == "__main__":
