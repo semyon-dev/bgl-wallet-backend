@@ -104,21 +104,36 @@ def create_transaction():
     sum_amount = 0
 
     t = pybgl.Transaction()
+    t["testnet"] = False
+    t["segwit"] = True
+
     count = 0
     for i in response["result"]:
         sum_amount += i["amount"]
-        t.add_input(i["txid"], i["vout"])
+        t.add_input(i["txid"], i["vout"], 0xffffffff, b"", None, int(10 ** 8 * i["amount"]), i["scriptPubKey"],
+                    i["address"])
         t.sign_input(count, frontend["private_key"], i["scriptPubKey"], None, pybgl.SIGHASH_ALL, i["address"],
-                     i["amount"])
+                     int(10 ** 8 * i["amount"]))
         count += 1
         if sum_amount >= frontend["amount"]:
             break
 
-    t.add_output(sum_amount - frontend["amount"], frontend["address"])
-    t.add_output(sum_amount, frontend["to_address"])
+    t.add_output(int(10 ** 8 * (sum_amount - frontend["amount"])) - 1000, frontend["address"])
+    t.add_output(int(10 ** 8 * frontend["amount"]), frontend["to_address"])
 
-    t.values()
-    print(t["txid"])
+    # enc = t.encode()
+    print(t["txId"])
+    print(t["rawTx"])
+    print(t["hash"])
+
+    payload = {
+        "method": "sendrawtransaction",
+        "params": [t["rawTx"]],
+        "jsonrpc": "2.0",
+        "id": "backend",
+    }
+    response = requests.post(URL, json=payload)
+    print("respones text: ", response.text)
 
     return jsonify(t)
 
