@@ -51,7 +51,7 @@ def get_balance(address):
     print(response)
 
     reply = {'amount': response["result"]}
-    return reply
+    return jsonify(reply)
 
 
 @app.route("/history", methods=['GET'])
