@@ -4,8 +4,10 @@ import pybgl
 import requests
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
+from pycoingecko import CoinGeckoAPI
 
 load_dotenv()
+cg = CoinGeckoAPI()
 
 app = Flask(__name__)
 node_url = os.getenv('NODE_URL')
@@ -110,7 +112,10 @@ def get_balance(address):
     response = requests.post(node_url + '/wallet/' + address, json=payload).json()
     print(response)
 
-    reply = {'amount': response["result"]}
+    usd_amount = cg.get_price(ids='bitgesell', vs_currencies='usd')
+
+    reply = {'amount': response["result"],
+             'usd_amount': '{0:.8f}'.format(usd_amount["bitgesell"]["usd"] * response["result"])}
     return jsonify(reply)
 
 
