@@ -158,7 +158,7 @@ def get_history():
         if i["address"] == address and i["category"] == "receive" and i["txid"] == back_txid:
             response["result"].remove(i)
 
-    return jsonify(response["result"])
+    return jsonify(list(reversed(response["result"])))
 
 
 @app.route("/transaction", methods=['POST'])
