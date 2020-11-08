@@ -1,10 +1,14 @@
+import os
+
 import pybgl
 import requests
-
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 
+load_dotenv()
+
 app = Flask(__name__)
-URL = 'http://bgl_user:12345678@161.35.123.34:8332'
+node_url = os.getenv('NODE_URL')
 
 
 @app.route("/wallet", methods=['POST'])
@@ -32,11 +36,11 @@ def create_wallet():
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(URL, json=payload)
+    response = requests.post(node_url, json=payload)
     print(response.text)
 
     # Import public key to node
-    url_request = URL + '/wallet/' + address
+    url_request = node_url + '/wallet/' + address
     payload = {
         "method": "importpubkey",
         "params": [hex_public_key, address, True],
@@ -74,11 +78,11 @@ def import_wallet():
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(URL, json=payload)
+    response = requests.post(node_url, json=payload)
     print(response.text)
 
     # Import public key to node
-    url_request = URL + '/wallet/' + address
+    url_request = node_url + '/wallet/' + address
     payload = {
         "method": "importpubkey",
         "params": [hex_public_key, address, True],
@@ -103,7 +107,7 @@ def get_balance(address):
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(URL + '/wallet/' + address, json=payload).json()
+    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
     print(response)
 
     reply = {'amount': response["result"]}
@@ -123,7 +127,7 @@ def get_history():
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(URL + '/wallet/' + address, json=payload).json()
+    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
 
     back_txid = "tx"
 
@@ -162,7 +166,7 @@ def create_transaction():
     # Create transaction
     frontend = request.json
     print(frontend)
-    message = "unknown error"
+
     try:
         # Get list of unspent
         addresses = [frontend["address"]]
@@ -172,7 +176,7 @@ def create_transaction():
             "jsonrpc": "2.0",
             "id": "backend",
         }
-        response = requests.post(URL + '/wallet/' + frontend["address"], json=payload).json()
+        response = requests.post(node_url + '/wallet/' + frontend["address"], json=payload).json()
         print(response)
         if response["error"] is not None:
             message = response["error"]["message"]
@@ -206,7 +210,7 @@ def create_transaction():
             "id": "backend",
         }
         print(payload)
-        response = requests.post(URL, json=payload).json()
+        response = requests.post(node_url, json=payload).json()
         print(response)
         if response["error"] is not None:
             message = response["error"]["message"]
@@ -222,7 +226,7 @@ def create_transaction():
             "jsonrpc": "2.0",
             "id": "backend",
         }
-        response = requests.post(URL, json=payload).json()
+        response = requests.post(node_url, json=payload).json()
         print(response)
         if response["error"] is not None:
             message = response["error"]["message"]
@@ -236,7 +240,7 @@ def create_transaction():
             "jsonrpc": "2.0",
             "id": "backend",
         }
-        response = requests.post(URL, json=payload).json()
+        response = requests.post(node_url, json=payload).json()
         print(response)
         if response["error"] is not None:
             message = response["error"]["message"]
