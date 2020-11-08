@@ -152,7 +152,8 @@ def get_history():
             i.pop("walletconflicts")
         if "involvesWatchonly" in i:
             i.pop("involvesWatchonly")
-        i.pop("vout")
+        if "vout" in i:
+            i.pop("vout")
 
     for i in response["result"]:
         if i["address"] == address and i["category"] == "receive" and i["txid"] == back_txid:
