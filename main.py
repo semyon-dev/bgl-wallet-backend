@@ -92,13 +92,20 @@ def get_history():
             response["result"].remove(i)
 
         i["amount"] = str(i["amount"])
-        i.pop("bip125-replaceable")
-        i.pop("blockhash")
-        i.pop("blockheight")
-        i.pop("blocktime")
-        i.pop("blockindex")
-        i.pop("walletconflicts")
-        i.pop("involvesWatchonly")
+        if "bip125-replaceable" in i:
+            i.pop("bip125-replaceable")
+        if "blockhash" in i:
+            i.pop("blockhash")
+        if "blockheight" in i:
+            i.pop("blockheight")
+        if "blocktime" in i:
+            i.pop("blocktime")
+        if "blockindex" in i:
+            i.pop("blockindex")
+        if "walletconflicts" in i:
+            i.pop("walletconflicts")
+        if "involvesWatchonly" in i:
+            i.pop("involvesWatchonly")
         i.pop("vout")
 
     for i in response["result"]:
@@ -113,7 +120,7 @@ def create_transaction():
     # Create transaction
     frontend = request.json
     print(frontend)
-
+    message = "unknown error"
     try:
         # Get list of unspent
         addresses = [frontend["address"]]
@@ -125,6 +132,9 @@ def create_transaction():
         }
         response = requests.post(URL + '/wallet/' + frontend["address"], json=payload).json()
         print(response)
+        if response["error"] is not None:
+            message = response["error"]["message"]
+            return jsonify({"message": message}), 400
 
         inputs = []
         outputs = []
@@ -135,15 +145,13 @@ def create_transaction():
             i_append = {"txid": i["txid"],
                         "vout": i["vout"]}
             inputs.append(i_append)
-            if sum_amount >= frontend["amount"]:
+            if sum_amount >= frontend["amount"] + 0.01:
                 break
 
-        # print("sum_amount: ", sum_amount)
-        # print("sum_amount - frontend[amount]: ", sum_amount - frontend["amount"])
-        # print("sum_amount - frontend[amount]: ", sum_amount - frontend["amount"])
-        # print("sum_amount - frontend[amount] - 0.014: ", sum_amount - frontend["amount"] - 0.014)
-        # print("-----------")
-        back_output = {frontend["address"]: float(format(sum_amount - frontend["amount"] - 0.014, '.8f'))}
+        print("sum_amount : ", sum_amount)
+        print("sum_amount - frontend amount: ", sum_amount - frontend["amount"])
+        print(sum_amount - frontend["amount"] - 0.01)
+        back_output = {frontend["address"]: float(format(sum_amount - frontend["amount"] - 0.01, '.8f'))}
         to_output = {frontend["to_address"]: frontend["amount"]}
 
         outputs.append(back_output)
@@ -158,6 +166,9 @@ def create_transaction():
         print(payload)
         response = requests.post(URL, json=payload).json()
         print(response)
+        if response["error"] is not None:
+            message = response["error"]["message"]
+            return jsonify({"message": message}), 400
 
         hexstring = response["result"]
         print("hexstring == ", hexstring)
@@ -171,6 +182,9 @@ def create_transaction():
         }
         response = requests.post(URL, json=payload).json()
         print(response)
+        if response["error"] is not None:
+            message = response["error"]["message"]
+            return jsonify({"message": message}), 400
 
         hexstring = response["result"]["hex"]
 
@@ -182,10 +196,13 @@ def create_transaction():
         }
         response = requests.post(URL, json=payload).json()
         print(response)
+        if response["error"] is not None:
+            message = response["error"]["message"]
+            return jsonify({"message": message}), 400
     except:
-        return jsonify({"message": "error"}), 400
+        return jsonify({"message": message}), 400
 
-    response["message"] = "ok"
+    response["message"] = "Transaction was sent successfully"
     return jsonify(response), 201
 
 
