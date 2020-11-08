@@ -51,6 +51,48 @@ def create_wallet():
     return jsonify(reply)
 
 
+@app.route("/wallet", methods=['PUT'])
+def import_wallet():
+    frontend = request.json
+
+    seed = pybgl.mnemonic_to_seed(frontend["mnemonic"])
+
+    x_private_key = pybgl.create_master_xprivate_key(seed)
+
+    private_key = pybgl.private_from_xprivate_key(x_private_key)
+
+    public_key = pybgl.private_to_public_key(private_key)
+    hex_public_key = pybgl.private_to_public_key(private_key, True, True)
+
+    address = pybgl.public_key_to_address(public_key)
+
+    # Create wallet request
+
+    payload = {
+        "method": "createwallet",
+        "params": [address, True],
+        "jsonrpc": "2.0",
+        "id": "backend",
+    }
+    response = requests.post(URL, json=payload)
+    print(response.text)
+
+    # Import public key to node
+    url_request = URL + '/wallet/' + address
+    payload = {
+        "method": "importpubkey",
+        "params": [hex_public_key, address, True],
+        "jsonrpc": "2.0",
+        "id": "backend",
+    }
+    response = requests.post(url_request, json=payload)
+    print(response.text)
+
+    reply = {'address': address, 'private_key': private_key,
+             "public_key": hex_public_key, "mnemonic": frontend["mnemonic"]}
+    return jsonify(reply)
+
+
 @app.route("/balance/<address>", methods=['GET'])
 def get_balance(address):
     assert address == request.view_args['address']
