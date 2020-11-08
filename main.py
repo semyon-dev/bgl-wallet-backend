@@ -72,30 +72,35 @@ def import_wallet():
 
     address = pybgl.public_key_to_address(public_key)
 
-    # Create wallet request
+    try:
+        # Create wallet request
 
-    payload = {
-        "method": "createwallet",
-        "params": [address, True],
-        "jsonrpc": "2.0",
-        "id": "backend",
-    }
-    response = requests.post(node_url, json=payload)
-    print(response.text)
+        payload = {
+            "method": "createwallet",
+            "params": [address, True],
+            "jsonrpc": "2.0",
+            "id": "backend",
+        }
+        response = requests.post(node_url, json=payload)
+        print(response.text)
 
-    # Import public key to node
-    url_request = node_url + '/wallet/' + address
-    payload = {
-        "method": "importpubkey",
-        "params": [hex_public_key, address, True],
-        "jsonrpc": "2.0",
-        "id": "backend",
-    }
-    response = requests.post(url_request, json=payload)
-    print(response.text)
+        # Import public key to node
+        url_request = node_url + '/wallet/' + address
+        payload = {
+            "method": "importpubkey",
+            "params": [hex_public_key, address, True],
+            "jsonrpc": "2.0",
+            "id": "backend",
+        }
+        response = requests.post(url_request, json=payload)
+        print(response.text)
+    except:
+        print("errr")
 
     reply = {'address': address, 'private_key': private_key,
              "public_key": hex_public_key, "mnemonic": frontend["mnemonic"]}
+
+    print(jsonify(reply))
     return jsonify(reply)
 
 
