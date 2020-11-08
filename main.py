@@ -104,6 +104,15 @@ def import_wallet():
     return jsonify(reply)
 
 
+# @app.route("/new_address", methods=['POST'])
+# def generate_new_address():
+#     frontend = request.json
+#
+#     seed = pybgl.mnemonic_to_seed(frontend["mnemonic"])
+#
+#     new_public_key = pybgl.
+
+
 @app.route("/balance/<address>", methods=['GET'])
 def get_balance(address):
     assert address == request.view_args['address']
@@ -174,6 +183,8 @@ def get_history():
 
 @app.route("/transaction", methods=['POST'])
 def create_transaction():
+    is_small_utxos = request.args.get('is_small_utxos')
+
     # Create transaction
     frontend = request.json
     print(frontend)
@@ -198,12 +209,18 @@ def create_transaction():
         outputs = []
 
         sum_amount = 0
+
+        if is_small_utxos:
+            response["result"] = sorted(response["result"], key=lambda k: k['amount'])
+            for i in response["result"]:
+                print(i['amount'])
+
         for i in response["result"]:
             sum_amount += i["amount"]
             i_append = {"txid": i["txid"],
                         "vout": i["vout"]}
             inputs.append(i_append)
-            if sum_amount >= frontend["amount"] + 0.01:
+            if sum_amount >= float(format(frontend["amount"] + 0.01, '.8f')):
                 break
 
         print("sum_amount : ", sum_amount)
