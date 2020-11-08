@@ -98,6 +98,14 @@ def import_wallet():
              "public_key": hex_public_key, "mnemonic": frontend["mnemonic"]}
     return jsonify(reply)
 
+# @app.route("/new_address", methods=['POST'])
+# def generate_new_address():
+#     frontend = request.json
+#
+#     seed = pybgl.mnemonic_to_seed(frontend["mnemonic"])
+#
+#     new_public_key = pybgl.
+
 
 @app.route("/balance/<address>", methods=['GET'])
 def get_balance(address):
