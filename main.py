@@ -1,10 +1,14 @@
+import os
+
 import pybgl
 import requests
-
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 
+load_dotenv()
+
 app = Flask(__name__)
-URL = 'http://bgl_user:12345678@161.35.123.34:8332'
+node_url = os.getenv('NODE_URL')
 
 
 @app.route("/wallet", methods=['POST'])
@@ -32,11 +36,11 @@ def create_wallet():
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(URL, json=payload)
+    response = requests.post(node_url, json=payload)
     print(response.text)
 
     # Import public key to node
-    url_request = URL + '/wallet/' + address
+    url_request = node_url + '/wallet/' + address
     payload = {
         "method": "importpubkey",
         "params": [hex_public_key, address, True],
@@ -74,11 +78,11 @@ def import_wallet():
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(URL, json=payload)
+    response = requests.post(node_url, json=payload)
     print(response.text)
 
     # Import public key to node
-    url_request = URL + '/wallet/' + address
+    url_request = node_url + '/wallet/' + address
     payload = {
         "method": "importpubkey",
         "params": [hex_public_key, address, True],
@@ -103,7 +107,7 @@ def get_balance(address):
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(URL + '/wallet/' + address, json=payload).json()
+    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
     print(response)
 
     reply = {'amount': response["result"]}
@@ -123,7 +127,7 @@ def get_history():
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(URL + '/wallet/' + address, json=payload).json()
+    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
 
     back_txid = "tx"
 
@@ -165,7 +169,7 @@ def create_transaction():
             "jsonrpc": "2.0",
             "id": "backend",
         }
-        response = requests.post(URL + '/wallet/' + frontend["address"], json=payload).json()
+        response = requests.post(node_url + '/wallet/' + frontend["address"], json=payload).json()
         print(response)
 
         inputs = []
@@ -185,7 +189,7 @@ def create_transaction():
         # print("sum_amount - frontend[amount]: ", sum_amount - frontend["amount"])
         # print("sum_amount - frontend[amount] - 0.014: ", sum_amount - frontend["amount"] - 0.014)
         # print("-----------")
-        back_output = {frontend["address"]: float(format(sum_amount - frontend["amount"] - 0.014, '.8f'))}
+        back_output = {frontend["address"]: float(format(sum_amount - frontend["amount"] - 0.01, '.8f'))}
         to_output = {frontend["to_address"]: frontend["amount"]}
 
         outputs.append(back_output)
@@ -198,7 +202,7 @@ def create_transaction():
             "id": "backend",
         }
         print(payload)
-        response = requests.post(URL, json=payload).json()
+        response = requests.post(node_url, json=payload).json()
         print(response)
 
         hexstring = response["result"]
@@ -211,7 +215,7 @@ def create_transaction():
             "jsonrpc": "2.0",
             "id": "backend",
         }
-        response = requests.post(URL, json=payload).json()
+        response = requests.post(node_url, json=payload).json()
         print(response)
 
         hexstring = response["result"]["hex"]
@@ -222,7 +226,7 @@ def create_transaction():
             "jsonrpc": "2.0",
             "id": "backend",
         }
-        response = requests.post(URL, json=payload).json()
+        response = requests.post(node_url, json=payload).json()
         print(response)
     except:
         return jsonify({"message": "error"}), 400
