@@ -166,6 +166,7 @@ def create_transaction():
     # Create transaction
     frontend = request.json
     print(frontend)
+    message = "unknown error"
 
     try:
         # Get list of unspent
