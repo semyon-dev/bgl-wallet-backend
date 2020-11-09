@@ -1,12 +1,17 @@
 import os
 
-import pybgl
+from pybgl import pybgl
 import requests
-from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from pycoingecko import CoinGeckoAPI
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except:
+    print(".env not from file")
+
 cg = CoinGeckoAPI()
 
 app = Flask(__name__)
