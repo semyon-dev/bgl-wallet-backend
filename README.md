@@ -1,8 +1,14 @@
 # Lightweight backend for bgl wallets
 
-* Python
+* Python 3.8
+
+## Third parties
+
 * Flask
 * PyBGL
+* requests
+* dotenv
+* pycoingecko
 
 **caution: wallet in development, don't store big amounts of BGL**
 
