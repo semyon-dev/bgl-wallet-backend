@@ -3,3 +3,7 @@
 * Python
 * Flask
 * PyBGL
+
+## LICENSE
+
+GPL-3.0 License
