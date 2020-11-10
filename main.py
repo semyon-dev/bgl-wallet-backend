@@ -1,6 +1,6 @@
 import os
 
-from pybgl import pybgl
+import pybgl
 import requests
 from flask import Flask, jsonify, request
 from pycoingecko import CoinGeckoAPI
