@@ -18,6 +18,11 @@ app = Flask(__name__)
 node_url = os.getenv('NODE_URL')
 
 
+@app.route("/", methods=['GET'])
+def welcome():
+    return jsonify({"message": "welcome"})
+
+
 @app.route("/wallet", methods=['POST'])
 def create_wallet():
     entropy = pybgl.generate_entropy()
@@ -287,4 +292,5 @@ def create_transaction():
 
 
 if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
