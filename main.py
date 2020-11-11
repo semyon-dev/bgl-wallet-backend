@@ -27,91 +27,15 @@ def welcome():
 def create_wallet():
     entropy = pybgl.generate_entropy()
     mnemonic = pybgl.entropy_to_mnemonic(entropy)
-    seed = pybgl.mnemonic_to_seed(mnemonic)
 
-    x_private_key = pybgl.create_master_xprivate_key(seed)
-
-    private_key = pybgl.private_from_xprivate_key(x_private_key)
-    print(private_key)
-    # wif_private_key = pybgl.private_key_to_wif(private_key)
-
-    public_key = pybgl.private_to_public_key(private_key)
-    hex_public_key = pybgl.private_to_public_key(private_key, True, True)
-
-    address = pybgl.public_key_to_address(public_key)
-
-    # Create wallet request
-
-    payload = {
-        "method": "createwallet",
-        "params": [address, True],
-        "jsonrpc": "2.0",
-        "id": "backend",
-    }
-    response = requests.post(node_url, json=payload)
-    print(response.text)
-
-    # Import public key to node
-    url_request = node_url + '/wallet/' + address
-    payload = {
-        "method": "importpubkey",
-        "params": [hex_public_key, address, True],
-        "jsonrpc": "2.0",
-        "id": "backend",
-    }
-    response = requests.post(url_request, json=payload)
-    print(response.text)
-
-    reply = {'address': address, 'private_key': private_key,
-             "public_key": hex_public_key, "mnemonic": mnemonic}
-    return jsonify(reply)
+    return import_wallet(mnemonic)
 
 
 @app.route("/wallet", methods=['PUT'])
-def import_wallet():
+def put_wallet():
     frontend = request.json
 
-    seed = pybgl.mnemonic_to_seed(frontend["mnemonic"])
-
-    x_private_key = pybgl.create_master_xprivate_key(seed)
-
-    private_key = pybgl.private_from_xprivate_key(x_private_key)
-
-    public_key = pybgl.private_to_public_key(private_key)
-    hex_public_key = pybgl.private_to_public_key(private_key, True, True)
-
-    address = pybgl.public_key_to_address(public_key)
-
-    try:
-        # Create wallet request
-
-        payload = {
-            "method": "createwallet",
-            "params": [address, True],
-            "jsonrpc": "2.0",
-            "id": "backend",
-        }
-        response = requests.post(node_url, json=payload)
-        print(response.text)
-
-        # Import public key to node
-        url_request = node_url + '/wallet/' + address
-        payload = {
-            "method": "importpubkey",
-            "params": [hex_public_key, address, True],
-            "jsonrpc": "2.0",
-            "id": "backend",
-        }
-        response = requests.post(url_request, json=payload)
-        print(response.text)
-    except:
-        print("errr")
-
-    reply = {'address': address, 'private_key': private_key,
-             "public_key": hex_public_key, "mnemonic": frontend["mnemonic"]}
-
-    print(jsonify(reply))
-    return jsonify(reply)
+    return import_wallet(frontend["mnemonic"])
 
 
 # @app.route("/new_address", methods=['POST'])
@@ -289,6 +213,49 @@ def create_transaction():
 
     response["message"] = "Transaction was sent successfully"
     return jsonify(response), 201
+
+
+def import_wallet(mnemonic):
+    seed = pybgl.mnemonic_to_seed(mnemonic)
+
+    x_private_key = pybgl.create_master_xprivate_key(seed)
+
+    private_key = pybgl.private_from_xprivate_key(x_private_key)
+
+    public_key = pybgl.private_to_public_key(private_key)
+    hex_public_key = pybgl.private_to_public_key(private_key, True, True)
+
+    address = pybgl.public_key_to_address(public_key)
+
+    try:
+        # Create wallet request
+
+        payload = {
+            "method": "createwallet",
+            "params": [address, True],
+            "jsonrpc": "2.0",
+            "id": "backend",
+        }
+        response = requests.post(node_url, json=payload)
+        print(response.text)
+
+        # Import public key to node
+        url_request = node_url + '/wallet/' + address
+        payload = {
+            "method": "importpubkey",
+            "params": [hex_public_key, address, True],
+            "jsonrpc": "2.0",
+            "id": "backend",
+        }
+        response = requests.post(url_request, json=payload)
+        print(response.text)
+    except:
+        print("errr")
+
+    reply = {'address': address, 'private_key': private_key,
+             "public_key": hex_public_key, "mnemonic": mnemonic}
+
+    return reply
 
 
 if __name__ == "__main__":
