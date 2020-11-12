@@ -14,7 +14,7 @@
 
 ## Clients
 
-* Created mobile wallet by our team https://github.com/GranPecador/bgl-wallet-android
+* mobile wallet by our team https://github.com/GranPecador/bgl-wallet-android
 
 ## LICENSE
 
