@@ -20,31 +20,20 @@ node_url = os.getenv('NODE_URL')
 
 @app.route("/", methods=['GET'])
 def welcome():
-    return jsonify({"message": "welcome"})
+    return jsonify({"message": "welcome"}), 200
 
 
 @app.route("/wallet", methods=['POST'])
 def create_wallet():
     entropy = pybgl.generate_entropy()
     mnemonic = pybgl.entropy_to_mnemonic(entropy)
-
-    return import_wallet(mnemonic)
+    return jsonify(import_wallet(mnemonic)), 201
 
 
 @app.route("/wallet", methods=['PUT'])
 def put_wallet():
-    frontend = request.json
-
-    return import_wallet(frontend["mnemonic"])
-
-
-# @app.route("/new_address", methods=['POST'])
-# def generate_new_address():
-#     frontend = request.json
-#
-#     seed = pybgl.mnemonic_to_seed(frontend["mnemonic"])
-#
-#     new_public_key = pybgl.
+    data = request.json
+    return jsonify(import_wallet(data["mnemonic"])), 200
 
 
 @app.route("/balance/<address>", methods=['GET'])
@@ -64,7 +53,7 @@ def get_balance(address):
 
     reply = {'amount': response["result"],
              'usd_amount': '{0:.8f}'.format(usd_amount["bitgesell"]["usd"] * response["result"])}
-    return jsonify(reply)
+    return jsonify(reply), 200
 
 
 @app.route("/history", methods=['GET'])
@@ -112,7 +101,7 @@ def get_history():
         if i["address"] == address and i["category"] == "receive" and i["txid"] == back_txid:
             response["result"].remove(i)
 
-    return jsonify(list(reversed(response["result"])))
+    return jsonify(list(reversed(response["result"]))), 200
 
 
 @app.route("/transaction", methods=['POST'])
