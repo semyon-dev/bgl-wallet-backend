@@ -245,7 +245,7 @@ def import_wallet(mnemonic):
     except:
         pass
 
-    reply = {'address': address, 'private_key': private_key,
+    reply = {"address": address, "private_key": private_key,
              "public_key": hex_public_key, "mnemonic": mnemonic}
 
     return reply
