@@ -20,20 +20,24 @@ node_url = os.getenv('NODE_URL')
 
 @app.route("/", methods=['GET'])
 def welcome():
-    return jsonify({"message": "welcome"}), 200
+    return jsonify({"message": "ok"}), 200
 
 
 @app.route("/wallet", methods=['POST'])
 def create_wallet():
     entropy = pybgl.generate_entropy()
     mnemonic = pybgl.entropy_to_mnemonic(entropy)
-    return jsonify(import_wallet(mnemonic)), 201
+    data = import_wallet(mnemonic)
+    data["message"] = "ok"
+    return jsonify(data), 201
 
 
 @app.route("/wallet", methods=['PUT'])
 def put_wallet():
     data = request.json
-    return jsonify(import_wallet(data["mnemonic"])), 200
+    reply = import_wallet(data["mnemonic"])
+    reply["message"] = "ok"
+    return jsonify(reply), 200
 
 
 @app.route("/balance/<address>", methods=['GET'])
@@ -200,7 +204,7 @@ def create_transaction():
     except:
         return jsonify({"message": message}), 400
 
-    response["message"] = "Transaction was sent successfully"
+    response["message"] = "transaction was sent successfully"
     return jsonify(response), 201
 
 
@@ -239,7 +243,7 @@ def import_wallet(mnemonic):
         response = requests.post(url_request, json=payload)
         print(response.text)
     except:
-        print("errr")
+        pass
 
     reply = {'address': address, 'private_key': private_key,
              "public_key": hex_public_key, "mnemonic": mnemonic}
