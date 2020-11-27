@@ -3,7 +3,6 @@ import os
 import pybgl
 import requests
 from flask import Flask, jsonify, request
-from pycoingecko import CoinGeckoAPI
 
 try:
     from dotenv import load_dotenv
@@ -11,8 +10,6 @@ try:
     load_dotenv()
 except:
     print(".env not from file")
-
-cg = CoinGeckoAPI()
 
 app = Flask(__name__)
 node_url = os.getenv('NODE_URL')
@@ -51,12 +48,7 @@ def get_balance(address):
         "id": "backend",
     }
     response = requests.post(node_url + '/wallet/' + address, json=payload).json()
-    print(response)
-
-    usd_amount = cg.get_price(ids='bitgesell', vs_currencies='usd')
-
-    reply = {'amount': response["result"],
-             'usd_amount': '{0:.8f}'.format(usd_amount["bitgesell"]["usd"] * response["result"])}
+    reply = {'amount': response["result"]}
     return jsonify(reply), 200
 
 
@@ -114,7 +106,6 @@ def create_transaction():
 
     # Create transaction
     frontend = request.json
-    print(frontend)
     message = "unknown error"
 
     try:
@@ -127,7 +118,6 @@ def create_transaction():
             "id": "backend",
         }
         response = requests.post(node_url + '/wallet/' + frontend["address"], json=payload).json()
-        print(response)
         if response["error"] is not None:
             message = response["error"]["message"]
             return jsonify({"message": message}), 400
@@ -139,8 +129,8 @@ def create_transaction():
 
         if is_small_utxos:
             response["result"] = sorted(response["result"], key=lambda k: k['amount'])
-            for i in response["result"]:
-                print(i['amount'])
+            # for i in response["result"]:
+            #     print(i['amount'])
 
         for i in response["result"]:
             sum_amount += i["amount"]
@@ -150,9 +140,9 @@ def create_transaction():
             if sum_amount >= float(format(frontend["amount"] + 0.01, '.8f')):
                 break
 
-        print("sum_amount : ", sum_amount)
-        print("sum_amount - frontend amount: ", sum_amount - frontend["amount"])
-        print(sum_amount - frontend["amount"] - 0.01)
+        # print("sum_amount : ", sum_amount)
+        # print("sum_amount - frontend amount: ", sum_amount - frontend["amount"])
+        # print(sum_amount - frontend["amount"] - 0.01)
         back_output = {frontend["address"]: float(format(sum_amount - frontend["amount"] - 0.01, '.8f'))}
         to_output = {frontend["to_address"]: frontend["amount"]}
 
@@ -165,15 +155,12 @@ def create_transaction():
             "jsonrpc": "2.0",
             "id": "backend",
         }
-        print(payload)
         response = requests.post(node_url, json=payload).json()
-        print(response)
         if response["error"] is not None:
             message = response["error"]["message"]
             return jsonify({"message": message}), 400
 
         hexstring = response["result"]
-        print("hexstring == ", hexstring)
         private_key = [frontend["private_key"]]
 
         payload = {
@@ -183,7 +170,6 @@ def create_transaction():
             "id": "backend",
         }
         response = requests.post(node_url, json=payload).json()
-        print(response)
         if response["error"] is not None:
             message = response["error"]["message"]
             return jsonify({"message": message}), 400
@@ -197,7 +183,6 @@ def create_transaction():
             "id": "backend",
         }
         response = requests.post(node_url, json=payload).json()
-        print(response)
         if response["error"] is not None:
             message = response["error"]["message"]
             return jsonify({"message": message}), 400
@@ -230,7 +215,6 @@ def import_wallet(mnemonic):
             "id": "backend",
         }
         response = requests.post(node_url, json=payload)
-        print(response.text)
 
         # Import public key to node
         url_request = node_url + '/wallet/' + address
@@ -241,7 +225,6 @@ def import_wallet(mnemonic):
             "id": "backend",
         }
         response = requests.post(url_request, json=payload)
-        print(response.text)
     except:
         pass
 
