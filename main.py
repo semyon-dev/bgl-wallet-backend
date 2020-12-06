@@ -40,7 +40,6 @@ def put_wallet():
 @app.route("/balance/<address>", methods=['GET'])
 def get_balance(address):
     assert address == request.view_args['address']
-
     payload = {
         "method": "getbalance",
         "params": ["*", 0, True],
@@ -48,8 +47,21 @@ def get_balance(address):
         "id": "backend",
     }
     response = requests.post(node_url + '/wallet/' + address, json=payload).json()
+    if response["error"]["code"] == -18:
+        load_wallet(address)
+    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
     reply = {'amount': response["result"]}
     return jsonify(reply), 200
+
+
+def load_wallet(address):
+    payload = {
+        "method": "loadwallet",
+        "params": [address],
+        "jsonrpc": "2.0",
+        "id": "backend",
+    }
+    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
 
 
 @app.route("/history", methods=['GET'])
@@ -65,6 +77,10 @@ def get_history():
         "jsonrpc": "2.0",
         "id": "backend",
     }
+    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
+    if response["error"]["code"] == -18:
+        load_wallet(address)
+
     response = requests.post(node_url + '/wallet/' + address, json=payload).json()
 
     back_txid = "tx"
@@ -117,6 +133,9 @@ def create_transaction():
             "jsonrpc": "2.0",
             "id": "backend",
         }
+        response = requests.post(node_url + '/wallet/' + frontend["address"], json=payload).json()
+        if response["error"]["code"] == -18:
+            load_wallet(frontend["address"])
         response = requests.post(node_url + '/wallet/' + frontend["address"], json=payload).json()
         if response["error"] is not None:
             message = response["error"]["message"]
@@ -206,14 +225,15 @@ def import_wallet(mnemonic):
     address = pybgl.public_key_to_address(public_key)
 
     try:
-        # Create wallet request
-
         payload = {
             "method": "createwallet",
             "params": [address, True],
             "jsonrpc": "2.0",
             "id": "backend",
         }
+        response = requests.post(node_url, json=payload)
+        if response.json()["error"]["code"] == -18:
+            load_wallet(address)
         response = requests.post(node_url, json=payload)
 
         # Import public key to node
@@ -225,8 +245,13 @@ def import_wallet(mnemonic):
             "id": "backend",
         }
         response = requests.post(url_request, json=payload)
+        if response.json()["error"]["code"] == -18:
+            load_wallet(address)
+        response = requests.post(url_request, json=payload)
     except:
         pass
+
+    load_wallet(address)
 
     reply = {"address": address, "private_key": private_key,
              "public_key": hex_public_key, "mnemonic": mnemonic}
