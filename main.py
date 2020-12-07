@@ -47,10 +47,16 @@ def get_balance(address):
         "id": "backend",
     }
     response = requests.post(node_url + '/wallet/' + address, json=payload).json()
-    if response["error"]["code"] == -18:
-        load_wallet(address)
-    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
+
+    # print("balance: ", response)
+
+    if response["error"] is not None:
+        if response["error"]["code"] == -18:
+            load_wallet(address)
+            response = requests.post(node_url + '/wallet/' + address, json=payload).json()
+
     reply = {'amount': response["result"]}
+
     return jsonify(reply), 200
 
 
@@ -61,7 +67,8 @@ def load_wallet(address):
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
+    response = requests.post(node_url + '/wallet/' + str(address), json=payload).json()
+    # print("load wallet: ", response)
 
 
 @app.route("/history", methods=['GET'])
@@ -77,14 +84,17 @@ def get_history():
         "jsonrpc": "2.0",
         "id": "backend",
     }
-    response = requests.post(node_url + '/wallet/' + address, json=payload).json()
-    if response["error"]["code"] == -18:
-        load_wallet(address)
 
     response = requests.post(node_url + '/wallet/' + address, json=payload).json()
+
+    if response["error"] is not None:
+        if response["error"]["code"] == -18:
+            print("-18 error: ", response)
+            load_wallet(address)
+            response = requests.post(node_url + '/wallet/' + str(address), json=payload).json()
 
     back_txid = "tx"
-
+    # print("get_history: ", response)
     for i in response["result"]:
 
         if i["address"] == address and i["category"] == "send":
@@ -134,9 +144,12 @@ def create_transaction():
             "id": "backend",
         }
         response = requests.post(node_url + '/wallet/' + frontend["address"], json=payload).json()
-        if response["error"]["code"] == -18:
-            load_wallet(frontend["address"])
-        response = requests.post(node_url + '/wallet/' + frontend["address"], json=payload).json()
+        if response["error"] is not None:
+            if response["error"]["code"] == -18:
+                print("-18 error: ", response)
+                load_wallet(frontend["address"])
+                response = requests.post(node_url + '/wallet/' + frontend["address"], json=payload).json()
+
         if response["error"] is not None:
             message = response["error"]["message"]
             return jsonify({"message": message}), 400
@@ -232,9 +245,10 @@ def import_wallet(mnemonic):
             "id": "backend",
         }
         response = requests.post(node_url, json=payload)
-        if response.json()["error"]["code"] == -18:
-            load_wallet(address)
-        response = requests.post(node_url, json=payload)
+        if response.json()["error"] is not None:
+            if response.json()["error"]["code"] == -18:
+                load_wallet(address)
+                requests.post(node_url, json=payload)
 
         # Import public key to node
         url_request = node_url + '/wallet/' + address
@@ -247,7 +261,7 @@ def import_wallet(mnemonic):
         response = requests.post(url_request, json=payload)
         if response.json()["error"]["code"] == -18:
             load_wallet(address)
-        response = requests.post(url_request, json=payload)
+            requests.post(url_request, json=payload)
     except:
         pass
 
